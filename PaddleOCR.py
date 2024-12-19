@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
 from paddleocr import PaddleOCR
 import re
 from functools import lru_cache
@@ -30,10 +30,9 @@ def is_valid_license_plate(text):
     return plate_pattern.match(text) is not None
 
 # 车牌识别函数
-@lru_cache(maxsize=10)  # 只缓存最近的10次图片识别结果
+@lru_cache(maxsize=10)
 def recognize_license_plate(image_path):
     get_ocr_instance()
-    # 如果结果已经缓存，直接返回
     if image_path in ocr_result_cache:
         return ocr_result_cache[image_path]
 
@@ -41,35 +40,45 @@ def recognize_license_plate(image_path):
     valid_candidates = []
 
     for line in result[0]:
-        text, confidence = line[1]
+        coords, (text, confidence) = line[0], line[1]
         if is_valid_license_plate(text) and confidence > 0.9:
-            valid_candidates.append((text, confidence))
+            valid_candidates.append((text, confidence, coords))
 
     valid_candidates.sort(key=lambda x: x[1], reverse=True)
-    ocr_result_cache[image_path] = valid_candidates  # 缓存结果
+    ocr_result_cache[image_path] = valid_candidates
     return valid_candidates
 
-# 界面更新函数
+# 更新图片显示函数
 def update_image_and_results(image_path):
-    # 更新图片显示
     if image_path in image_cache:
         img = image_cache[image_path]
     else:
         try:
             img = Image.open(image_path)
-            image_cache[image_path] = img  # 缓存图片
+            image_cache[image_path] = img
         except Exception as e:
             result_label.configure(text=f"图片加载失败：{e}")
             return
 
-    img.thumbnail((500, 300), Image.Resampling.LANCZOS)  # 调整图片大小
+    results = recognize_license_plate(image_path)
+
+    if results:
+        # 在图片上绘制矩形框
+        img_draw = img.copy()
+        draw = ImageDraw.Draw(img_draw)
+        for _, _, coords in results:
+            coords = [tuple(map(int, point)) for point in coords]
+            draw.polygon(coords, outline="red", width=3)
+
+        img = img_draw
+
+    img.thumbnail((500, 300), Image.Resampling.LANCZOS)
     photo = ImageTk.PhotoImage(img)
     img_label.configure(image=photo)
     img_label.image = photo
 
-    # 识别车牌
-    results = recognize_license_plate(image_path)
-    results_text = "识别结果：\n" + "\n".join([f"车牌: {text}, 置信度: {confidence:.2f}" for text, confidence in results])
+    # 显示识别结果
+    results_text = "识别结果：\n" + "\n".join([f"车牌: {text}, 置信度: {confidence:.2f}" for text, confidence, _ in results])
     if not results:
         results_text = "未识别到符合条件的车牌号"
     result_label.configure(text=results_text)
