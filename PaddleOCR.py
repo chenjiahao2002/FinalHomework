@@ -18,20 +18,16 @@ def get_ocr_instance():
 image_cache = {}
 ocr_result_cache = {}
 
-# 正则规则函数
-def is_valid_license_plate(text):
-    """
-    判断是否为符合规则的车牌号（国际、中国车牌号或粤Z车牌号）
-    """
-    china_plate_pattern = r"^[\u4e00-\u9fff][A-Z]·[A-Z0-9]{5}$"
-    international_plate_pattern = r"^[A-Z]{1,3}[0-9]{1,4}[A-Z0-9]{0,3}$"
-    yue_z_plate_pattern = r"^粤Z·[A-Z0-9]{4}[港澳]$"
-    newenergy_plate_pattern = r"^[\u4e00-\u9fff][A-Z]·[DF][A-Z0-9]{5}$"
+plate_patterns = [
+    r"^[\u4e00-\u9fff][A-Z]·[A-Z0-9]{5}$",           # 中国车牌
+    r"^[A-Z]{1,3}[0-9]{1,4}[A-Z0-9]{0,3}$",          # 国际车牌
+    r"^粤Z·[A-Z0-9]{4}[港澳]$",                      # 粤Z车牌
+    r"^[\u4e00-\u9fff][A-Z]·[DF][A-Z0-9]{5}$"         # 新能源车牌
+]
+plate_pattern = re.compile("|".join(plate_patterns))
 
-    return (re.match(china_plate_pattern, text) or 
-            re.match(international_plate_pattern, text) or
-            re.match(yue_z_plate_pattern, text) or
-            re.match(newenergy_plate_pattern, text))
+def is_valid_license_plate(text):
+    return plate_pattern.match(text) is not None
 
 # 车牌识别函数
 @lru_cache(maxsize=10)  # 只缓存最近的10次图片识别结果
