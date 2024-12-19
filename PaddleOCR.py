@@ -64,7 +64,7 @@ def update_image_and_results(image_path):
             result_label.configure(text=f"图片加载失败：{e}")
             return
 
-    img.thumbnail((500, 300))  # 限制图片大小
+    img.thumbnail((500, 300), Image.Resampling.LANCZOS)  # 调整图片大小
     photo = ImageTk.PhotoImage(img)
     img_label.configure(image=photo)
     img_label.image = photo
