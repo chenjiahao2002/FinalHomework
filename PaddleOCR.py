@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog
 from PIL import Image, ImageTk
 from paddleocr import PaddleOCR
 import re
+from functools import lru_cache
 
 ocr_instance = None
 
@@ -33,6 +34,7 @@ def is_valid_license_plate(text):
             re.match(newenergy_plate_pattern, text))
 
 # 车牌识别函数
+@lru_cache(maxsize=10)  # 只缓存最近的10次图片识别结果
 def recognize_license_plate(image_path):
     get_ocr_instance()
     # 如果结果已经缓存，直接返回
