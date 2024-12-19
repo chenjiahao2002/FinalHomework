@@ -38,7 +38,12 @@ def recognize_license_plate(image_path):
 # 界面更新函数
 def update_image_and_results(image_path):
     # 更新图片显示
-    img = Image.open(image_path)
+    try:
+        img = Image.open(image_path)
+    except Exception as e:
+        result_label.configure(text=f"图片加载失败：{e}")
+        return
+
     img.thumbnail((500, 300))  # 限制图片大小
     photo = ImageTk.PhotoImage(img)
     img_label.configure(image=photo)
