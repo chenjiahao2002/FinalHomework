@@ -4,8 +4,14 @@ from PIL import Image, ImageTk
 from paddleocr import PaddleOCR
 import re
 
+ocr_instance = None
+
 # 初始化 OCR
-ocr = PaddleOCR(use_angle_cls=True, lang='ch')
+def get_ocr_instance():
+    global ocr_instance
+    if not ocr_instance:
+        ocr_instance = PaddleOCR(use_angle_cls=True, lang='ch')
+    return ocr_instance
 
 # 图片和识别结果缓存
 image_cache = {}
@@ -28,11 +34,12 @@ def is_valid_license_plate(text):
 
 # 车牌识别函数
 def recognize_license_plate(image_path):
+    get_ocr_instance()
     # 如果结果已经缓存，直接返回
     if image_path in ocr_result_cache:
         return ocr_result_cache[image_path]
 
-    result = ocr.ocr(image_path, det=True, rec=True)
+    result = ocr_instance.ocr(image_path, det=True, rec=True)
     valid_candidates = []
 
     for line in result[0]:
