@@ -7,6 +7,10 @@ import re
 # 初始化 OCR
 ocr = PaddleOCR(use_angle_cls=True, lang='ch')
 
+# 图片和识别结果缓存
+image_cache = {}
+ocr_result_cache = {}
+
 # 正则规则函数
 def is_valid_license_plate(text):
     """
@@ -24,6 +28,10 @@ def is_valid_license_plate(text):
 
 # 车牌识别函数
 def recognize_license_plate(image_path):
+    # 如果结果已经缓存，直接返回
+    if image_path in ocr_result_cache:
+        return ocr_result_cache[image_path]
+
     result = ocr.ocr(image_path, det=True, rec=True)
     valid_candidates = []
 
@@ -33,16 +41,21 @@ def recognize_license_plate(image_path):
             valid_candidates.append((text, confidence))
 
     valid_candidates.sort(key=lambda x: x[1], reverse=True)
+    ocr_result_cache[image_path] = valid_candidates  # 缓存结果
     return valid_candidates
 
 # 界面更新函数
 def update_image_and_results(image_path):
     # 更新图片显示
-    try:
-        img = Image.open(image_path)
-    except Exception as e:
-        result_label.configure(text=f"图片加载失败：{e}")
-        return
+    if image_path in image_cache:
+        img = image_cache[image_path]
+    else:
+        try:
+            img = Image.open(image_path)
+            image_cache[image_path] = img  # 缓存图片
+        except Exception as e:
+            result_label.configure(text=f"图片加载失败：{e}")
+            return
 
     img.thumbnail((500, 300))  # 限制图片大小
     photo = ImageTk.PhotoImage(img)
