@@ -5,14 +5,8 @@ from paddleocr import PaddleOCR
 import re
 from functools import lru_cache
 
-ocr_instance = None
-
 # 初始化 OCR
-def get_ocr_instance():
-    global ocr_instance
-    if not ocr_instance:
-        ocr_instance = PaddleOCR(use_angle_cls=True, lang='ch')
-    return ocr_instance
+ocr = PaddleOCR(use_angle_cls=True, lang='ch')
 
 # 图片和识别结果缓存
 image_cache = {}
@@ -32,11 +26,10 @@ def is_valid_license_plate(text):
 # 车牌识别函数
 @lru_cache(maxsize=10)
 def recognize_license_plate(image_path):
-    get_ocr_instance()
     if image_path in ocr_result_cache:
         return ocr_result_cache[image_path]
 
-    result = ocr_instance.ocr(image_path, det=True, rec=True)
+    result = ocr.ocr(image_path, det=True, rec=True)
     valid_candidates = []
 
     for line in result[0]:
