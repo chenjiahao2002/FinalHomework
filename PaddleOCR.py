@@ -4,6 +4,7 @@ from PIL import Image, ImageTk, ImageDraw
 from paddleocr import PaddleOCR
 import re
 from functools import lru_cache
+import time
 
 # 初始化 OCR
 ocr = PaddleOCR(use_angle_cls=True, lang='ch')
@@ -29,7 +30,13 @@ def recognize_license_plate(image_path):
     if image_path in ocr_result_cache:
         return ocr_result_cache[image_path]
 
+    start_time = time.time()  # 开始计时
     result = ocr.ocr(image_path, det=True, rec=True)
+    end_time = time.time()  # 结束计时
+
+    processing_time = end_time - start_time
+    print(f"识别耗时: {processing_time:.4f} 秒")  # 打印处理时间
+
     valid_candidates = []
 
     for line in result[0]:
